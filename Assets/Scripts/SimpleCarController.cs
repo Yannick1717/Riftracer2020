@@ -79,6 +79,9 @@ public class SimpleCarController : MonoBehaviour
     //Sounds
     public List<AudioSource> carSounds;
     public float RangeDivider = 4f;
+    public AudioSource tireSquiek, crash, smallCrash;
+    private float crashDelay = 2;
+    private float lastCrash = 0;
 
     //Checkpoints
     public GameObject[] checkpoints;
@@ -98,6 +101,32 @@ public class SimpleCarController : MonoBehaviour
     //TODO refactor
     public Laps laps;
 
+    private void tireSound(float slip) {
+        if (slip > 0.4 || slip < -0.5) {
+            if(tireSquiek.volume < 0.95f) {
+            tireSquiek.volume += 0.05f;
+            }
+        }
+        else {
+            if (tireSquiek.volume > 0.05f) {
+                tireSquiek.volume -= 0.05f;
+            }
+        }
+    }
+
+    void OnTriggerEnter(Collider other) {
+        print(Time.time - lastCrash + " - " + crashDelay);
+        if (Time.time - lastCrash > crashDelay  && other.gameObject.tag != "Checkpoint") {
+            if (speed < 40) {
+                smallCrash.Play();
+            }
+            else {
+                crash.Play();
+            }
+            lastCrash = Time.time;
+        }
+    }
+
 
     /** 
      * Transformiert (rotiert) alle übergebenen Räder anhand des Wheelcolliders
@@ -113,6 +142,13 @@ public class SimpleCarController : MonoBehaviour
 
         for (int i = 0; i < 4; i++)
         {
+
+            WheelHit hit = new WheelHit();
+            WheelCollider wheel = GetComponent<WheelCollider>();
+        if (wheels[0].GetGroundHit(out hit)) {
+                    tireSound(hit.forwardSlip);
+        }
+
             if (wheels[i].transform.childCount == 0)
             {
                 return;
@@ -130,8 +166,7 @@ public class SimpleCarController : MonoBehaviour
             visualWheel.transform.position = position;
             visualWheel.transform.rotation = rotation;
         }
-
-    }
+        }
 
     /**
      * Methode, welche sofort wenn das Script aktiviert wird, den globalen
@@ -168,6 +203,8 @@ public class SimpleCarController : MonoBehaviour
         {
             carSounds[i].Play();
             carSounds[i].volume = 0.0f;
+            tireSquiek.Play();
+            tireSquiek.volume = 0.0f;
         }
 
 
